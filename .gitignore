@@ -1,0 +1,36 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache y compilados
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Configuración local y secretos
+.env
+.env.local
+
+# Bases de datos y persistencia local
+*.db
+*.sqlite
+*.sqlite3
+saludconecta_his.db
+chroma_db/
+.chroma/
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
