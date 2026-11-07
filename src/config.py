@@ -34,6 +34,8 @@ DATA_DIR = BASE_DIR / "data"
 CITAS_CSV_PATH = DATA_DIR / "citas_disponibles.csv"
 MANUAL_PATH = DATA_DIR / "manual_preparacion.md"
 CATALOGO_PATH = DATA_DIR / "catalogo_especialidades.md"
+PACIENTES_CSV_PATH = DATA_DIR / "pacientes_simulados.csv"
+COMPROBANTES_DIR = Path(os.getenv("COMPROBANTES_DIR", str(BASE_DIR / "comprobantes")))
 
 DB_PATH = Path(os.getenv("DB_PATH", str(BASE_DIR / "saludconecta_his.db")))
 CHROMA_PERSIST_DIR = Path(os.getenv("CHROMA_PERSIST_DIRECTORY", str(BASE_DIR / "chroma_db")))

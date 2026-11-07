@@ -259,9 +259,9 @@ Respuesta al Paciente:
 
 He consultado nuestro sistema hospitalario Mock HIS para la sede de **Santiago Centro**. A continuación, los cupos médicos disponibles:
 
-• ID Cita: 1 | Especialidad: Cardiología Adulto | Médico: Dr. Roberto Silva | Sede: Clínica Central (Santiago Centro) | Horario: 2026-09-28 a las 09:00 hrs | Previsión: Fonasa e Isapres
-• ID Cita: 2 | Especialidad: Cardiología Adulto | Médico: Dr. Roberto Silva | Sede: Clínica Central (Santiago Centro) | Horario: 2026-09-28 a las 10:00 hrs | Previsión: Fonasa e Isapres
-• ID Cita: 4 | Especialidad: Traumatología - Columna | Médico: Dr. Carlos Henríquez | Sede: Clínica Central (Santiago Centro) | Horario: 2026-09-29 a las 11:00 hrs | Previsión: Fonasa e Isapres
+• ID Cita: 1 | Especialidad: Cardiología Adulto | Médico: Dr. Roberto Silva | Sede: Clínica Central (Santiago Centro) | Horario: 2026-12-07 a las 09:00 hrs | Previsión: Fonasa e Isapres
+• ID Cita: 2 | Especialidad: Cardiología Adulto | Médico: Dr. Roberto Silva | Sede: Clínica Central (Santiago Centro) | Horario: 2026-12-07 a las 10:00 hrs | Previsión: Fonasa e Isapres
+• ID Cita: 4 | Especialidad: Traumatología - Columna | Médico: Dr. Carlos Henríquez | Sede: Clínica Central (Santiago Centro) | Horario: 2026-12-08 a las 11:00 hrs | Previsión: Fonasa e Isapres
 
 Para confirmar su reserva, por favor indíquenos el **ID de la cita**, su **RUT** (ej: 12.345.678-9), **Nombre Completo** y **Teléfono de contacto**.
 
@@ -283,7 +283,7 @@ Respuesta al Paciente:
 • Especialidad: Cardiología Adulto
 • Profesional: Dr. Roberto Silva
 • Centro de Atención: Clínica Central (Santiago Centro)
-• Fecha y Hora: 2026-09-28 a las 09:00 hrs
+• Fecha y Hora: 2026-12-07 a las 09:00 hrs
 • Paciente: Juan Pérez (RUT: 12.345.678-9)
 • Teléfono de Contacto: +56991234567
 

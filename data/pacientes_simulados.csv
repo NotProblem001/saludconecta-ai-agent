@@ -1,0 +1,4 @@
+paciente_id,nombre,rut,telefono,prevision,farmacos,alergias
+PAC-001,Juan Pérez Soto,15.678.901-2,+56988776655,Fonasa,metformina,
+PAC-002,María González Rojas,12.345.678-9,+56977665544,Isapre,,
+PAC-003,Ana Fuentes Lagos,9.876.543-K,+56966554433,Fonasa,losartán,yodo

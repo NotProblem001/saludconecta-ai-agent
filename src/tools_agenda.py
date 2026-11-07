@@ -16,7 +16,7 @@ from typing import Optional, List, Dict, Any
 from pathlib import Path
 from langchain_core.tools import tool
 
-from src.config import DB_PATH, CITAS_CSV_PATH
+from src.config import DB_PATH, CITAS_CSV_PATH, PACIENTES_CSV_PATH
 
 
 def validar_formato_rut_chileno(rut: str) -> bool:
@@ -39,15 +39,63 @@ def get_db_connection(db_file: Optional[Path] = None) -> sqlite3.Connection:
     return conn
 
 
+TABLAS_MEMORIA = """
+    CREATE TABLE IF NOT EXISTS pacientes (
+        paciente_id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        rut TEXT,
+        telefono TEXT,
+        prevision TEXT,
+        farmacos TEXT NOT NULL DEFAULT '',
+        alergias TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS preferencias (
+        paciente_id TEXT NOT NULL,
+        clave TEXT NOT NULL,
+        valor TEXT NOT NULL,
+        actualizado_en TEXT NOT NULL,
+        PRIMARY KEY (paciente_id, clave)
+    );
+    CREATE TABLE IF NOT EXISTS atenciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente_id TEXT NOT NULL,
+        fecha TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        resumen TEXT NOT NULL,
+        cita_id INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS indicaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente_id TEXT NOT NULL,
+        cita_id INTEGER,
+        texto TEXT NOT NULL,
+        archivo TEXT,
+        fecha TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS traza_decisiones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        turno INTEGER NOT NULL,
+        ts TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        paso TEXT,
+        motivo TEXT,
+        detalle TEXT
+    );
+"""
+
+
 def init_database(db_file: Optional[Path] = None, force_reset: bool = False):
     """
-    Crea la tabla de citas e inicializa los registros desde citas_disponibles.csv si está vacía.
+    Crea las tablas del Mock HIS y de memoria de largo plazo y siembra citas y pacientes
+    desde los CSV. INSERT OR IGNORE agrega filas nuevas sin tocar las reservas existentes.
     """
     conn = get_db_connection(db_file)
     cursor = conn.cursor()
 
     if force_reset:
-        cursor.execute("DROP TABLE IF EXISTS citas")
+        for tabla in ("citas", "pacientes", "preferencias", "atenciones", "indicaciones", "traza_decisiones"):
+            cursor.execute(f"DROP TABLE IF EXISTS {tabla}")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS citas (
@@ -67,17 +115,14 @@ def init_database(db_file: Optional[Path] = None, force_reset: bool = False):
         )
     """)
     conn.commit()
+    cursor.executescript(TABLAS_MEMORIA)
 
-    # Comprobar si existen registros
-    cursor.execute("SELECT COUNT(*) FROM citas")
-    total_citas = cursor.fetchone()[0]
-
-    if total_citas == 0 and CITAS_CSV_PATH.exists():
+    if CITAS_CSV_PATH.exists():
         with open(CITAS_CSV_PATH, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 cursor.execute("""
-                    INSERT INTO citas (
+                    INSERT OR IGNORE INTO citas (
                         id, especialidad, medico, sucursal, comuna, fecha, hora, prevision, estado
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
@@ -93,16 +138,26 @@ def init_database(db_file: Optional[Path] = None, force_reset: bool = False):
                 ))
         conn.commit()
 
+    if PACIENTES_CSV_PATH.exists():
+        with open(PACIENTES_CSV_PATH, mode="r", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                cursor.execute("""
+                    INSERT OR IGNORE INTO pacientes (
+                        paciente_id, nombre, rut, telefono, prevision, farmacos, alergias
+                    ) VALUES (:paciente_id, :nombre, :rut, :telefono, :prevision, :farmacos, :alergias)
+                """, row)
+        conn.commit()
+
     conn.close()
 
 
-def _ejecutar_consulta_citas(
+def buscar_citas(
     especialidad: Optional[str] = None,
     comuna: Optional[str] = None,
     sucursal: Optional[str] = None,
     fecha: Optional[str] = None
-) -> str:
-    """Lógica central de consulta SQL sobre SQLite para cupos médicos disponibles."""
+) -> List[Dict[str, Any]]:
+    """Consulta SQL sobre SQLite de cupos médicos disponibles; retorna filas como diccionarios."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -128,8 +183,19 @@ def _ejecutar_consulta_citas(
     query += " ORDER BY fecha ASC, hora ASC LIMIT 10"
 
     cursor.execute(query, params)
-    rows = cursor.fetchall()
+    rows = [dict(r) for r in cursor.fetchall()]
     conn.close()
+    return rows
+
+
+def _ejecutar_consulta_citas(
+    especialidad: Optional[str] = None,
+    comuna: Optional[str] = None,
+    sucursal: Optional[str] = None,
+    fecha: Optional[str] = None
+) -> str:
+    """Formatea como texto para el paciente el resultado de buscar_citas."""
+    rows = buscar_citas(especialidad=especialidad, comuna=comuna, sucursal=sucursal, fecha=fecha)
 
     if not rows:
         filtro_desc = []

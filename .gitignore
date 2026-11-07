@@ -34,3 +34,6 @@ chroma_db/
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Comprobantes generados por el agente
+comprobantes/
