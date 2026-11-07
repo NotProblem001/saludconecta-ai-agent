@@ -137,6 +137,7 @@ def test_comprobante_sin_pii_y_guardado_en_memoria():
     ("Necesito hora de cardiología en Maipú", "agendar", "Cardiología Adulto", None),
     ("Quiero reservar la cita 4", "agendar", None, None),
     ("Necesito un TAC de abdomen con contraste", "agendar", "Imagenología - TAC con Contraste", "IMG-102"),
+    ("Necesito un TAC con contraste, tomo metformina", "agendar", "Imagenología - TAC con Contraste", "IMG-102"),
     ("¿Qué ayuno necesito para un perfil lipídico?", "preparacion", "Laboratorio Clínico", "LAB-001"),
     ("Quiero cancelar mi cita 4", "cancelar", None, None),
     ("Quiero reprogramar mi hora", "reprogramar", None, None),

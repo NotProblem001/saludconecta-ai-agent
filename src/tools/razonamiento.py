@@ -26,7 +26,7 @@ from src.tools_agenda import get_db_connection
 class Examen(NamedTuple):
     patron: str
     protocolo: str
-    especialidad_agenda: Optional[str]
+    especialidad_agenda: str
 
 
 EXAMENES: List[Examen] = [
@@ -36,10 +36,10 @@ EXAMENES: List[Examen] = [
     Examen(r"\b(perfil lipidico|glicemia|colesterol)\b", "LAB-001", "Laboratorio Clínico"),
     Examen(r"\b(hemograma|vhs)\b", "LAB-002", "Laboratorio Clínico"),
     Examen(r"\b(urocultivo|orina completa)\b", "LAB-003", "Laboratorio Clínico"),
-    Examen(r"\becografia\b", "IMG-301", None),
-    Examen(r"\b(endoscopia|eda)\b", "EDA-401", None),
-    Examen(r"\bcolonoscopia\b", "COL-402", None),
-    Examen(r"\bmamografia\b", "IMG-501", None),
+    Examen(r"\becografia\b", "IMG-301", "Ecografía"),
+    Examen(r"\b(endoscopia|eda)\b", "EDA-401", "Endoscopía Digestiva"),
+    Examen(r"\bcolonoscopia\b", "COL-402", "Colonoscopía"),
+    Examen(r"\bmamografia\b", "IMG-501", "Mamografía"),
 ]
 
 # Nombre exacto en el HIS -> términos que el paciente suele usar
@@ -60,10 +60,8 @@ ESPECIALIDADES: List[Tuple[str, str]] = [
     ("Reumatología", r"reumatolog\w*|artritis"),
 ]
 
-_PALABRAS_PREPARACION = (
-    r"\b(ayuno|preparacion|preparar|preparo|examen|examenes|indicacion|indicaciones|creatinina|"
-    r"metformina|biopsia|muestra|sangre|protocolo)\b"
-)
+_PREPARACION_EXPLICITA = r"\b(ayuno|preparacion|preparar|preparo|indicacion|indicaciones|protocolo)\b"
+_TEMA_EXAMEN = r"\b(examen|examenes|creatinina|metformina|biopsia|muestra|sangre)\b"
 _OBJETO_AGENDA = r"\b(hora|horas|cita|cupo|consulta|control)\b"
 
 
@@ -76,9 +74,9 @@ def clasificar_texto(texto: str) -> SalidaClasificacion:
     t = normalizar(texto)
 
     examen = next((x for x in EXAMENES if re.search(x.patron, t)), None)
-    especialidad = examen.especialidad_agenda if examen else None
-    if especialidad is None:
-        especialidad = next((nombre for nombre, patron in ESPECIALIDADES if re.search(rf"\b(?:{patron})\b", t)), None)
+    especialidad = examen.especialidad_agenda if examen else next(
+        (nombre for nombre, patron in ESPECIALIDADES if re.search(rf"\b(?:{patron})\b", t)), None
+    )
 
     verbo_reserva = bool(re.search(r"\b(agendar|agenda|reservar|reserva|sacar|pedir|tomar|confirmar|confirmo)\b", t))
     pide_algo = bool(re.search(r"\b(necesito|quiero|busco)\b", t))
@@ -92,7 +90,9 @@ def clasificar_texto(texto: str) -> SalidaClasificacion:
         intencion = "historial"
     elif verbo_reserva and (objeto or examen):
         intencion = "agendar"
-    elif re.search(_PALABRAS_PREPARACION, t) and not (pide_algo and objeto):
+    elif re.search(_PREPARACION_EXPLICITA, t):
+        intencion = "preparacion"
+    elif re.search(_TEMA_EXAMEN, t) and not (pide_algo and (objeto or examen)):
         intencion = "preparacion"
     elif pide_algo and (objeto or examen):
         intencion = "agendar"
