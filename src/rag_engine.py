@@ -317,7 +317,8 @@ class RAGEngine:
         self,
         query: str,
         top_k: int = 3,
-        threshold: Optional[float] = None
+        threshold: Optional[float] = None,
+        filtro: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Recupera los top_k fragmentos más relevantes y aplica el filtro de umbral de similitud (>= 0.75).
@@ -339,7 +340,7 @@ class RAGEngine:
 
         # Búsqueda protegida con score de distancia coseno
         try:
-            raw_results = self.vector_store.similarity_search_with_score(query, k=top_k)
+            raw_results = self.vector_store.similarity_search_with_score(query, k=top_k, filter=filtro)
         except Exception as e:
             logger.warning("Fallo en vector_store.similarity_search_with_score (%s). Utilizando abstención fáctica.", e)
             return {
