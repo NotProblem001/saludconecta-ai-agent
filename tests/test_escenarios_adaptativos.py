@@ -3,6 +3,10 @@ Escenarios de planificación adaptativa de punta a punta, con LLM simulado o aus
 """
 
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 from tests.conftest import LLMFalso, eventos, plan_json
 
@@ -309,6 +313,17 @@ def test_pide_solo_los_datos_que_faltan(entorno):
     final = agente.process_message("+56988776655")
     assert "RESERVA CONFIRMADA" in final["response"]
     assert "Juan Pérez" in final["response"]
+
+
+def test_script_de_demo_aprueba_todos_los_escenarios():
+    raiz = Path(__file__).resolve().parent.parent
+    proceso = subprocess.run(
+        [sys.executable, "scripts/run_demo_scenarios.py"], cwd=raiz, capture_output=True,
+        encoding="utf-8", env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+    )
+    assert proceso.returncode == 0, proceso.stderr
+    assert "FALLA" not in proceso.stdout
+    assert "Planes generados por LLM: 0" in proceso.stdout
 
 
 def test_pii_no_llega_al_llm_a_la_traza_ni_a_la_memoria(entorno):

@@ -136,8 +136,7 @@ def main() -> int:
     print("\n" + "=" * 90 + "\nRESUMEN\n" + "=" * 90)
     for escenario, aprobado in resumen:
         print(f"{'OK   ' if aprobado else 'FALLA'} {escenario.nombre}")
-    print(f"
-Planes generados por LLM: {ORIGENES.count('llm')} | por reglas: {ORIGENES.count('reglas')}")
+    print(f"\nPlanes generados por LLM: {ORIGENES.count('llm')} | por reglas: {ORIGENES.count('reglas')}")
     if args.llm == "real" and "llm" not in ORIGENES:
         print("AVISO: ningún plan provino del LLM. Revise la credencial en .env; esta pasada no valida el LLM real.")
     return 0 if all(aprobado for _, aprobado in resumen) else 1
