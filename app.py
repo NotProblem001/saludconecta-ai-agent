@@ -265,7 +265,8 @@ for msg in st.session_state.messages:
         if msg.get("is_emergency", False):
             st.error(msg["content"])
         else:
-            st.markdown(msg["content"])
+            # Markdown une las líneas con "•": como lista, cada cupo o indicación queda en su línea
+            st.markdown(msg["content"].replace("\n• ", "\n- "))
 
         # Metadatos del mensaje (tiempo de respuesta, herramientas, PII)
         metadata_chips = []
