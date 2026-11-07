@@ -103,6 +103,12 @@ class MemoriaLargoPlazo:
         conn.close()
         return [dict(f) for f in filas]
 
+    def obtener_cita(self, cita_id: Optional[int]) -> Optional[Dict[str, Any]]:
+        conn = get_db_connection()
+        fila = conn.execute("SELECT * FROM citas WHERE id = ?", (cita_id,)).fetchone()
+        conn.close()
+        return dict(fila) if fila else None
+
     def citas_pendientes(self, rut: Optional[str]) -> List[Dict[str, Any]]:
         """
         Citas RESERVADAS del paciente. No se compara con la fecha actual porque

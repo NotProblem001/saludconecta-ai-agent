@@ -159,8 +159,7 @@ def test_pii_no_llega_al_llm_ni_a_la_memoria(monkeypatch, tmp_path):
             capturado.extend(messages)
             return AIMessage(content="Respuesta de prueba")
 
-    agent.has_credentials = True
-    agent.llm_with_tools = LLMFalso()
+    agent.llm, agent.has_credentials = LLMFalso(), True
     agent.process_message("Hola, soy 15.678.901-2 y mi fono es +56988776655, ¿atienden Fonasa?")
 
     enviado = " ".join(str(m.content) for m in capturado)
