@@ -456,7 +456,7 @@ class SaludConectaAgent:
         # ======================================================================
         emergency_check = self.emergency_guardrail.evaluate(user_input)
         if emergency_check.is_emergency:
-            self.memory.chat_memory.add_user_message(user_input)
+            self.memory.chat_memory.add_user_message(self.pii_anonymizer.anonymize(user_input).sanitized_text)
             self.memory.chat_memory.add_ai_message(emergency_check.action_message)
 
             return {
@@ -513,7 +513,7 @@ class SaludConectaAgent:
 
         messages = [SystemMessage(content=system_content)]
         messages.extend(history_messages)
-        messages.append(HumanMessage(content=format_user_prompt(user_input)))
+        messages.append(HumanMessage(content=format_user_prompt(sanitized_input)))
 
         # ======================================================================
         # PASO 5: EJECUCIÓN DEL LLM Y TOOL CALLING
@@ -567,8 +567,8 @@ class SaludConectaAgent:
             )
 
         # Actualizar memoria conversacional de ventana deslizante (k=5)
-        self.memory.chat_memory.add_user_message(user_input)
-        self.memory.chat_memory.add_ai_message(final_response)
+        self.memory.chat_memory.add_user_message(sanitized_input)
+        self.memory.chat_memory.add_ai_message(self.pii_anonymizer.anonymize(final_response).sanitized_text)
 
         return {
             "bypass_activated": False,
