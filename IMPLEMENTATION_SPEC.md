@@ -6,6 +6,7 @@
 **Institución:** Duoc UC – Escuela de Informática y Telecomunicaciones  
 **Versión:** 1.0.0  
 **Fecha:** Septiembre 2026  
+**Nota:** Este documento describe la entrega de EP1. La arquitectura vigente de EP2 está en [`docs/arquitectura_ep2.md`](docs/arquitectura_ep2.md).  
 
 ---
 

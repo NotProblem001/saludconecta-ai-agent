@@ -2,7 +2,7 @@
 ## Red de Salud Metropolitana "SaludConecta"
 
 > **Asignatura:** ISY0101 – Ingeniería de Soluciones con Inteligencia Artificial  
-> **Evaluación Parcial N°1 (EP1):** Encargo Escrito y Repositorio Digital (Ponderación 30%)  
+> **Evaluación Parcial N°1 (EP1):** Encargo Escrito y Repositorio Digital (Ponderación 30%). Actualizado en EP2: ver sección 6.  
 > **Resultado de Aprendizaje (RA):** RA1 – Diseña soluciones basadas en modelos de lenguaje (LLM), aplicando técnicas de Prompt Engineering y RAG, que resuelvan requerimientos de información complejos en entornos organizacionales.  
 > **Alumno:** Matias Alejandro Araos Urra  
 > **Institución:** Duoc UC – Escuela de Informática y Telecomunicaciones  
@@ -191,9 +191,9 @@ Flujo de consulta y confirmación de horas médicas sobre la base de datos relac
 +----------------------------------------------------------------------------------------------------+
 | Se encontraron 3 cupos disponibles en el sistema hospitalario:                                     |
 |                                                                                                    |
-| [ ] ID #1 | CARDIOLOGÍA ADULTO | Dr. Roberto Silva    | 2026-09-28 a las 09:00 hrs | Fonasa/Isapre|
-| [ ] ID #2 | CARDIOLOGÍA ADULTO | Dr. Roberto Silva    | 2026-09-28 a las 10:00 hrs | Fonasa/Isapre|
-| [X] ID #4 | TRAUMATOLOGÍA      | Dr. Carlos Henríquez | 2026-09-29 a las 11:00 hrs | Fonasa/Isapre|
+| [ ] ID #1 | CARDIOLOGÍA ADULTO | Dr. Roberto Silva    | 2026-12-07 a las 09:00 hrs | Fonasa/Isapre|
+| [ ] ID #2 | CARDIOLOGÍA ADULTO | Dr. Roberto Silva    | 2026-12-07 a las 10:00 hrs | Fonasa/Isapre|
+| [X] ID #4 | TRAUMATOLOGÍA      | Dr. Carlos Henríquez | 2026-12-08 a las 11:00 hrs | Fonasa/Isapre|
 +----------------------------------------------------------------------------------------------------+
 | 📝 FORMULARIO DE CONFIRMACIÓN DE RESERVA ATÓMICA                                                   |
 |----------------------------------------------------------------------------------------------------|
@@ -212,7 +212,7 @@ Flujo de consulta y confirmación de horas médicas sobre la base de datos relac
 | ✅ RESERVA CONFIRMADA EXITOSAMENTE:                                                                |
 | • Código de Reserva: #4                                                                            |
 | • Profesional: Dr. Carlos Henríquez (Traumatología - Columna)                                      |
-| • Fecha y Hora: 2026-09-29 a las 11:00 hrs                                                         |
+| • Fecha y Hora: 2026-12-08 a las 11:00 hrs                                                         |
 | • Paciente: Juan Pablo Pérez González (RUT: 15.678.901-2)                                          |
 | • Estado en Base de Datos: RESERVADA (Bloqueo atómico contra doble agendamiento)                   |
 |                                                                                                    |
@@ -281,3 +281,64 @@ La arquitectura de información organiza las entidades de conocimiento y flujos 
 * **Consideraciones de Seguridad y Ética Médica (Ley N° 20.584):**
   - Protección de datos sensibles mediante anonimización automática previa al procesamiento.
   - Inclusión obligatoria del descargo: *"La orientación asistencial entregada por SaludBot es preliminar y no constituye diagnóstico médico ni prescripción farmacológica."*
+
+---
+
+## 6. Elementos de interfaz agregados en EP2
+
+La barra lateral suma el selector de paciente y la memoria. Cada respuesta suma el panel de traza. Los botones de prueba de EP1 pasan a ser escenarios adaptativos, más un interruptor que simula la caída del HIS.
+
+### 6.1 Wireframe 5: Barra lateral con memoria del paciente
+
+```text
++---------------------------------+
+| 👤 Paciente de la sesión        |
+| Identificador simulado          |
+| [ PAC-001 · Juan Pérez Soto  v] |
+|                                 |
+| v 🧠 Memoria del paciente       |
+|   Fármacos: metformina          |
+|   Alergias: sin registro        |
+|   Preferencias: sede: Santiago  |
+|   Centro, franja: mañana        |
+|   📌 Cita #26: Imagenología -   |
+|   TAC con Contraste,            |
+|   2026-12-09 08:30              |
+|   2026-11-06: Agendar una       |
+|   atención (cita #26)           |
+|                                 |
+| ⚡ Escenarios Adaptativos       |
+| [🔄 1. Sin cupos en la sede   ] |
+| [🚨 2. Riesgo vital en el plan] |
+| [⚠️ 3. Fuera de dominio       ] |
+| [💊 4. TAC y metformina       ] |
+| (o ) 🔌 5. Simular caída del HIS|
++---------------------------------+
+```
+
+Cambiar de paciente inicia una sesión nueva: limpia el corto plazo y carga la memoria persistente. Si hay citas pendientes, el primer mensaje del chat las recuerda con su preparación.
+
+### 6.2 Wireframe 6: Panel de traza de decisiones
+
+Cada respuesta del agente incluye un panel plegable. Muestra versión y estado del plan, y los eventos del turno.
+
+```text
+| 🩺 🔄 Sin cupos en Maipú: se amplía a otras sedes.                         |
+|    🩺 Cupos disponibles:                                                   |
+|    - ID 26 | Imagenología - TAC con Contraste con Dr. Tomás Riquelme ...   |
+|                                                                            |
+|    ⏱️ Latencia: 304.19 ms • 🛠️ HIS Tools: clasificar_solicitud, ...        |
+|    v 🧭 Traza de decisiones · plan v2 (esperando_paciente)                 |
+|      MEMORIA: Contexto cargado: 0 cita(s) pendiente(s) ...                 |
+|      PLAN_INICIAL: Agendar una atención (origen: reglas)                   |
+|      HERRAMIENTA consultar_disponibilidad_horas: ok=True error=None        |
+|      DECISION consultar_disponibilidad_horas: replanificar: SIN_CUPOS      |
+|      REPLAN consultar_disponibilidad_horas: sin cupos en Maipú ...         |
+```
+
+**Criterios de diseño:**
+
+- La traza va plegada: es evidencia técnica y no debe distraer al paciente.
+- Los chips muestran el tipo de dato protegido, nunca su valor.
+- Solo el Código Rojo se pinta como emergencia. Las respuestas que mencionan el SAMU por otros motivos se muestran normales.
+- La latencia del Código Rojo corresponde al guardrail. En los demás turnos corresponde al turno completo.
