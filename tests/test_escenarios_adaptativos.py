@@ -285,6 +285,19 @@ def test_paciente_desiste_del_plan(entorno):
     assert entorno.estado_cita(1) == "DISPONIBLE"
 
 
+def test_saludo_no_dispara_informacion_clinica(entorno):
+    r = entorno.crear_agente().process_message("Hola")
+    assert "Radioterapia" not in r["response"]
+    assert "Soy SaludBot" in r["response"]
+
+
+def test_pide_varios_datos_en_lenguaje_natural(entorno):
+    agente = entorno.crear_agente()
+    r = agente.process_message("Quiero reservar la cita 4")
+    assert "**Nombre Completo** y **Teléfono" in r["response"]
+    assert "), **Nombre Completo**" in r["response"]
+
+
 def test_pide_solo_los_datos_que_faltan(entorno):
     agente = entorno.crear_agente()
     agente.process_message("Quiero reservar la cita 4")

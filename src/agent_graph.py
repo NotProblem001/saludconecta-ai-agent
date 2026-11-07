@@ -202,7 +202,8 @@ class GrafoAgente:
         if tarea.plan.intencion == "agendar" and not busqueda["especialidad"]:
             busqueda["especialidad"] = ESPECIALIDAD_POR_DEFECTO
         tarea.datos["busqueda"] = busqueda
-        if not tarea.datos.get("comuna") and preferencias.get("sede"):
+        usa_agenda = tarea.plan.indice("consultar_disponibilidad_horas") is not None
+        if usa_agenda and not tarea.datos.get("comuna") and preferencias.get("sede"):
             self.a.traza.registrar("PREFERENCIA", f"Se usa la sede preferida: {preferencias['sede']}")
 
     def _aporta(self, paso: Paso, s: EstadoTurno) -> bool:
@@ -468,7 +469,8 @@ class GrafoAgente:
             nota = f"\n\n💡 *Prerrequisito:* {catalogo.prerrequisito}" if catalogo and catalogo.prerrequisito else ""
             return f"{encabezado}\n" + "\n".join(lineas) + nota + "\n\n*Indique el ID del cupo que prefiere.*"
         if paso.herramienta == "solicitar_datos":
-            faltantes = " y ".join(ETIQUETA_DATO[c] for c in self._faltantes())
+            etiquetas = [ETIQUETA_DATO[c] for c in self._faltantes()]
+            faltantes = " y ".join(filter(None, [", ".join(etiquetas[:-1]), etiquetas[-1]]))
             cita = tarea.datos.get("cita_id")
             return f"Para continuar{f' con el cupo #{cita}' if cita else ''} necesito su {faltantes}."
         conflictos = tarea.resultados["validar_reglas"].conflictos

@@ -81,8 +81,8 @@ class DeterministicFallbackEmbeddings:
         )
         all_tokens = [t for t in re.findall(r'[a-z]{3,}', clean) if t not in self.stopwords]
 
-        if not all_tokens:
-            return self.base.tolist()
+        # Un texto sin contenido (solo stopwords) no debe parecerse a todos los documentos
+        all_tokens = all_tokens or ["__sin_contenido__"]
 
         vec = np.zeros(self.dim)
         for t in set(all_tokens):
