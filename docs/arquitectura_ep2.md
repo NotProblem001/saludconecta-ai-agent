@@ -170,8 +170,9 @@ Fuera de la replanificación, `abstener` cierra el plan sin LLM y `degradar` ent
 4. Toda cancelación va precedida de `solicitar_datos`.
 5. Una consulta de preparación siempre pasa por `buscar_protocolo_rag`.
 6. La intención declarada debe tener su paso clave, y `elegir_cupo` exige una búsqueda previa.
+7. El plan del LLM debe concordar con la intención reconocida por las reglas (`_concuerda_con_reglas`). Si las reglas no reconocen la solicitud, el LLM puede proponer lecturas o una búsqueda de cupos, pero nunca cancelar, reprogramar ni reservar un cupo directo.
 
-Un plan que no se puede corregir se descarta y se usa el plan por reglas.
+Un plan que no se puede corregir se descarta y se usa el plan por reglas. Los argumentos de cada herramienta los resuelve el ejecutor desde el estado de la tarea: los que proponga el LLM se ignoran.
 
 ## 4. Flujo de memoria
 
@@ -211,7 +212,7 @@ flowchart LR
 | Dato | Dónde se guarda | Vigencia | Llega al LLM |
 |---|---|---|---|
 | Conversación anonimizada | `MemoriaVentana` | Sesión, últimos 5 turnos | Sí |
-| Plan y datos recolectados | `EstadoTarea` | Hasta cerrar la tarea | RUT, nombre y teléfono: no |
+| Plan y datos recolectados | `EstadoTarea` | Hasta cerrar la tarea | RUT, teléfono y nombre conocido: no |
 | Fármacos, alergias y prerrequisitos | Tablas `pacientes` e `indicaciones` | Entre sesiones | Fármacos y alergias: sí |
 | Sede y franja preferidas | Tabla `preferencias` | Entre sesiones | Sí |
 | Atenciones previas | Tabla `atenciones` | Entre sesiones | Sí, resumidas |

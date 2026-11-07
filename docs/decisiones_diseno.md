@@ -34,6 +34,8 @@ Cada registro entrega contexto, decisión, alternativas y consecuencias técnica
 
 **Consecuencias.** Se eliminó `bind_tools` de EP1. El agente opera sin LLM y sin perder las garantías de seguridad. Cuando el LLM propone un plan, solo puede elegir entre pasos permitidos.
 
+**Evidencia con LLM real (gpt-4o-mini por OpenRouter).** La primera ejecución falló 3 de 6 escenarios, en fallas que el modelo simulado no mostró: el LLM leyó "la cita 26" como cancelar, convirtió "Necesito un TAC" en una consulta y fijó argumentos que anulaban la replanificación. Por eso se agregó la concordancia con las reglas, el ejecutor ignora los argumentos del LLM y el planificador recibe la conversación reciente. El costo es que el LLM aporta menos autonomía: cuando discrepa con las reglas, ganan las reglas.
+
 <!-- A COMPLETAR POR EL EQUIPO: justificación crítica de la elección -->
 
 ## ADR-003: Tipo de memoria
@@ -81,7 +83,7 @@ Cada registro entrega contexto, decisión, alternativas y consecuencias técnica
 **Decisión.**
 
 1. El Código Rojo es el primer nodo de todos los turnos, también con un plan activo.
-2. El LLM, la memoria y la traza reciben solo texto anonimizado. Los datos personales quedan en `EstadoTarea` y el ejecutor los resuelve.
+2. El LLM, la memoria y la traza reciben solo texto anonimizado. Los datos personales quedan en `EstadoTarea` y el ejecutor los resuelve. El anonimizador no reconoce nombres, así que se enmascara el nombre conocido por la tarea. Un nombre mencionado sin RUT ni solicitud de datos previa (ej: "soy Pedro") no se detecta.
 3. Se agregaron patrones coloquiales de riesgo vital, sin quitar ninguno.
 4. Toda escritura exige validación previa y, si hay conflicto, confirmación explícita.
 5. El agente advierte y remite al médico tratante. No suspende ni ajusta tratamientos.
@@ -92,7 +94,7 @@ Cada registro entrega contexto, decisión, alternativas y consecuencias técnica
 | Anonimizar solo el mensaje actual | El historial reintroduce el PII en el siguiente turno |
 | Dar el RUT al LLM para usar tool calling | Contradice la protección de datos declarada |
 
-**Consecuencias.** La detección por expresiones regulares favorece no perder emergencias y acepta falsos positivos: "dolor de pecho leve hace un año, quiero control" activa el Código Rojo. Sigue habiendo frases que no detecta. Las reglas clínicas transcriben `data/manual_preparacion.md` y **requieren revisión del equipo antes de cualquier uso fuera del contexto académico**.
+**Consecuencias.** La detección por expresiones regulares favorece no perder emergencias y acepta falsos positivos: "dolor de pecho leve hace un año, quiero control" activa el Código Rojo. Sigue habiendo frases que no detecta. Con LLM real, en turnos generales sin plan la abstención depende del prompt: ante "¿atienden los sábados?" respondió de forma vaga en lugar de abstenerse. Las respuestas de preparación repiten indicaciones del manual sobre fármacos ("no debes inyectarte insulina matinal") y remiten al médico solo cuando el manual lo hace. Las reglas clínicas transcriben `data/manual_preparacion.md` y **requieren revisión del equipo antes de cualquier uso fuera del contexto académico**.
 
 <!-- A COMPLETAR POR EL EQUIPO: justificación crítica de los guardrails -->
 

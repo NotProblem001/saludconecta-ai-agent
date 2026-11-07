@@ -4,7 +4,7 @@
 **Caso organizacional:** la red SaludConecta automatiza un agendamiento de imagenología, donde un examen mal preparado se pierde.
 **Muestra:** autonomía, 3 replanificaciones (2 en la primera sesión, 1 en la segunda), memoria entre sesiones y Código Rojo.
 
-Todos los inputs de este guion se ejecutaron con el planificador por reglas y producen el resultado descrito. Con LLM activo, la redacción de algunas respuestas puede variar.
+Todos los inputs de este guion se ejecutaron con el planificador por reglas y con LLM real, y producen el resultado descrito. Con LLM activo, la redacción de algunas respuestas puede variar.
 
 ## Preparación (antes de presentar)
 
@@ -76,6 +76,7 @@ python -m src.agent_orchestrator --paciente PAC-001
 ## Antes de presentar
 
 - [ ] Ensayar el guion completo con cronómetro.
-- [ ] Renovar la credencial del LLM si van a mostrar el modo con LLM real. Hoy la key de `.env` responde error de autenticación.
+- [ ] Confirmar que la key de `.env` sigue activa si van a mostrar el modo con LLM real.
+- [ ] Avisar que, con LLM real, los turnos con planificación tardan cerca de 2 a 7 segundos.
 - [ ] Definir quién conduce la demo y quién narra.
 <!-- A COMPLETAR POR EL EQUIPO: reparto de la demo y frase de cierre -->

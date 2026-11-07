@@ -155,7 +155,9 @@ saludconecta-ai-agent/
 - La detección de Código Rojo usa expresiones regulares: puede generar falsos positivos y no detectar todas las formas de expresar una emergencia.
 - Las reglas clínicas y los pacientes son material académico sin revisión profesional.
 - La disponibilidad no filtra por previsión del paciente.
-- El camino con LLM real se prueba con un modelo simulado. Ver [`tests/TEST_EVIDENCE.md`](tests/TEST_EVIDENCE.md).
+- En turnos generales sin plan, la abstención depende del prompt y no de una regla determinista.
+- Con LLM real, los turnos con planificación tardan cerca de 2 a 7 segundos, sobre la meta de 2 s de KPI-01.
+- El anonimizador no reconoce nombres: solo se enmascara el nombre conocido por la tarea.
 
 ## Documentación
 

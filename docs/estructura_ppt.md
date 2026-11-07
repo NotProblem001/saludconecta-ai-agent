@@ -22,7 +22,8 @@ Tiempos por integrante: I1 = 1:00 + 1:00 + 1:15 + 1:45 = 5:00. I2 = 1:00 + 1:00 
 |---|---|---|
 | Pruebas automatizadas | Ver `tests/TEST_EVIDENCE.md` | Medido |
 | Cobertura de `src/` | Ver `tests/TEST_EVIDENCE.md` | Medido |
-| Escenarios adaptativos | 6 de 6 en `run_demo_scenarios.py` | Medido, en entorno controlado |
+| Escenarios adaptativos | 6 de 6 con y sin LLM real | Medido, en entorno controlado |
+| Latencia de turnos con planificación y LLM real | Cerca de 2 a 7 s, sobre la meta de 2 s de KPI-01 | Medido |
 | Latencia del bypass Código Rojo | Se muestra en el mensaje durante la demo | Medido en vivo |
 | Exámenes suspendidos, de 22 % a menos de 13 % | Línea base y meta de EP1 | **Simulado, sin medición real** |
 | Derivación correcta, de 68 % a más de 90 % | Línea base y meta de EP1 | **Simulado, sin medición real** |
