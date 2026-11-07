@@ -76,6 +76,12 @@ def test_rag_grounding_especialidad_cardiologia(temp_rag_engine):
     assert "electrocardiograma" in combined_text or "ecg" in combined_text
 
 
+@pytest.mark.parametrize("saludo", ["Hola", "hola, que tal", "y"])
+def test_saludo_no_recupera_documentos(temp_rag_engine, saludo):
+    """Un texto sin contenido clínico no debe superar el umbral."""
+    assert temp_rag_engine.retrieve_with_threshold(saludo, threshold=0.75)["grounding_found"] is False
+
+
 def test_rag_abstention_on_unknown_procedure(temp_rag_engine):
     """
     Verifica la REGLA DE ORO DE ABSTENCIÓN FÁCTICA:

@@ -6,7 +6,8 @@ Asignatura: ISY0101 | Ingeniería de Soluciones con Inteligencia Artificial - Du
 
 import sys
 import time
-from typing import Dict, Any, List
+from pathlib import Path
+from typing import Dict, Any, List, Optional
 import streamlit as st
 
 # Asegurar codificación UTF-8 en consolas Windows
@@ -17,7 +18,10 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
+from src import tools_agenda
 from src.agent_orchestrator import SaludConectaAgent
+
+RUTA_HIS_CAIDO = Path("his_no_disponible") / "his.db"
 
 # ==============================================================================
 # 1. CONFIGURACIÓN DE PÁGINA
@@ -95,31 +99,50 @@ if "agent" not in st.session_state:
             agent = SaludConectaAgent()
             agent.setup()
             st.session_state.agent = agent
+            st.session_state.ruta_his = tools_agenda.DB_PATH
+            st.session_state.pacientes = {p["paciente_id"]: p["nombre"] for p in agent.memoria.listar_pacientes()}
         except Exception as e:
             st.error(f"❌ Error al inicializar el agente clínico: {str(e)}")
             st.stop()
 
+def mensaje_bienvenida(recordatorio: Optional[str] = None) -> Dict[str, Any]:
+    """Primer mensaje del chat; incluye lo que el agente recuerda del paciente."""
+    saludo = (
+        "👋 **¡Hola! Bienvenido/a a la Red SaludConecta.**\n\n"
+        "Soy **SaludBot**, tu asistente clínico y administrativo de orientación asistencial y triaje preliminar. Te puedo orientar en:\n\n"
+        "* 📋 **Preparación de Exámenes:** Indicaciones de ayuno, medicamentos y precauciones (LAB, TAC, Resonancia, Endoscopías).\n"
+        "* 🩺 **Especialidades Médicas:** Prerrequisitos clínicos e interconsultas para más de 45 especialidades.\n"
+        "* 🗓️ **Agendamiento y Citas (Mock HIS):** Consulta de disponibilidad horaria, reserva, reprogramación y anulación de horas médicas.\n"
+        "* 💳 **Convenios y Coberturas:** Información institucional para Fonasa (MLE / Bono PAD) e Isapres (I-Med).\n\n"
+        "> ⚠️ *Recuerda: Si presentas síntomas de urgencia con riesgo vital, no uses este chat y llama al **SAMU 131**.*\n\n"
+        "¿En qué te puedo orientar hoy?"
+    )
+    return {
+        "role": "assistant",
+        "content": f"{recordatorio}\n\n{saludo}" if recordatorio else saludo,
+        "is_emergency": False,
+        "response_time_ms": 0.0,
+        "tools_used": [],
+        "pii_detected": [],
+        "api_notice": None,
+        "traza": [],
+        "plan": None,
+    }
+
+
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {
-            "role": "assistant",
-            "content": (
-                "👋 **¡Hola! Bienvenido/a a la Red SaludConecta.**\n\n"
-                "Soy **SaludBot**, tu asistente clínico y administrativo de orientación asistencial y triaje preliminar. Te puedo orientar en:\n\n"
-                "* 📋 **Preparación de Exámenes:** Indicaciones de ayuno, medicamentos y precauciones (LAB, TAC, Resonancia, Endoscopías).\n"
-                "* 🩺 **Especialidades Médicas:** Prerrequisitos clínicos e interconsultas para más de 45 especialidades.\n"
-                "* 🗓️ **Agendamiento y Citas (Mock HIS):** Consulta de disponibilidad horaria, reserva y anulación de horas médicas.\n"
-                "* 💳 **Convenios y Coberturas:** Información institucional para Fonasa (MLE / Bono PAD) e Isapres (I-Med).\n\n"
-                "> ⚠️ *Recuerda: Si presentas síntomas de urgencia con riesgo vital, no uses este chat y llama al **SAMU 131**.*\n\n"
-                "¿En qué te puedo orientar hoy?"
-            ),
-            "is_emergency": False,
-            "response_time_ms": 0.0,
-            "tools_used": [],
-            "pii_detected": [],
-            "api_notice": None,
-        }
-    ]
+    st.session_state.messages = [mensaje_bienvenida()]
+
+
+def cambiar_paciente() -> None:
+    """Inicia una sesión nueva: limpia el corto plazo y carga la memoria del paciente elegido."""
+    agente = st.session_state.agent
+    st.session_state.messages = [mensaje_bienvenida(agente.iniciar_sesion(st.session_state.paciente))]
+
+
+def simular_caida_his() -> None:
+    """Apunta el HIS a una ruta inexistente para demostrar la degradación controlada."""
+    tools_agenda.DB_PATH = RUTA_HIS_CAIDO if st.session_state.his_caido else st.session_state.ruta_his
 
 
 # ==============================================================================
@@ -144,6 +167,31 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # Identificación simulada y memoria de largo plazo
+    st.markdown("### 👤 Paciente de la sesión")
+    pacientes = st.session_state.pacientes
+    st.selectbox(
+        "Identificador simulado",
+        options=[None] + list(pacientes),
+        format_func=lambda pid: "Sin identificar" if pid is None else f"{pid} · {pacientes[pid]}",
+        key="paciente",
+        on_change=cambiar_paciente,
+    )
+
+    contexto = st.session_state.agent.contexto
+    if contexto:
+        with st.expander("🧠 Memoria del paciente", expanded=True):
+            st.markdown(f"**Fármacos:** {', '.join(contexto.farmacos) or 'sin registro'}")
+            st.markdown(f"**Alergias:** {', '.join(contexto.alergias) or 'sin registro'}")
+            preferencias = ", ".join(f"{k}: {v}" for k, v in contexto.preferencias.items())
+            st.markdown(f"**Preferencias:** {preferencias or 'sin registro'}")
+            for cita in contexto.citas_pendientes:
+                st.markdown(f"📌 Cita #{cita['id']}: {cita['especialidad']}, {cita['fecha']} {cita['hora']}")
+            for atencion in contexto.atenciones[:3]:
+                st.caption(f"{atencion['fecha'][:10]}: {atencion['resumen']}")
+
+    st.markdown("---")
+
     # Resumen Institucional
     st.markdown("### 🏢 Información de la Red")
     st.markdown("""
@@ -155,52 +203,36 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Selector de Modo de Prueba Rápida (Requisitos 1 al 4)
-    st.markdown("### ⚡ Casos de Prueba Rápida")
-    st.caption("Validación interactiva de los 4 escenarios clave:")
+    # Escenarios de planificación adaptativa
+    st.markdown("### ⚡ Escenarios Adaptativos")
+    st.caption("Para el escenario 4 seleccione antes al paciente PAC-001.")
 
-    if st.button("🧪 1. Consulta Ayuno LAB-001 (RAG)", use_container_width=True):
+    if st.button("🔄 1. Sin cupos en la sede", width="stretch"):
+        prompt_to_process = "Necesito una hora de cardiología en Maipú"
+
+    if st.button("🚨 2. Riesgo vital durante el plan", width="stretch"):
+        prompt_to_process = "Quiero la cita 1, ah pero me duele mucho el pecho"
+
+    if st.button("⚠️ 3. Fuera de dominio (abstención)", width="stretch"):
+        prompt_to_process = "¿Cuál es el protocolo de preparación para una biopsia hepática espacial de astronautas en gravedad cero?"
+
+    if st.button("💊 4. TAC con contraste y metformina", width="stretch"):
+        prompt_to_process = "Necesito un TAC de abdomen con contraste"
+
+    st.toggle("🔌 5. Simular caída del HIS", key="his_caido", on_change=simular_caida_his)
+
+    if st.button("🧪 Consulta de ayuno LAB-001 (RAG)", width="stretch"):
         prompt_to_process = "¿Cuáles son las indicaciones de ayuno para un examen de perfil lipídico y glicemia?"
 
-    if st.button("🚨 2. Alerta Código Rojo (SAMU 131)", use_container_width=True):
-        prompt_to_process = "Tengo un dolor muy fuerte en el pecho que se me sube a la mandíbula y brazo izquierdo"
-
-    if st.button("📍 3. Sedes y Horas Santiago Centro", use_container_width=True):
+    if st.button("📍 Sedes y horas Santiago Centro", width="stretch"):
         prompt_to_process = "¿Dónde tienen cobertura? Deseo consultar las horas disponibles en Santiago Centro."
-
-    if st.button("⚠️ 4. Pregunta Fuera de Dominio (Abstención)", use_container_width=True):
-        prompt_to_process = "¿Cuál es el protocolo de preparación para una biopsia hepática espacial de astronautas en gravedad cero?"
 
     st.markdown("---")
 
     # Botón Reiniciar Conversación
-    if st.button("🔄 Reiniciar Conversación", use_container_width=True, type="secondary"):
-        try:
-            if "agent" in st.session_state:
-                st.session_state.agent.reset_conversation()
-            st.session_state.messages = [
-                {
-                    "role": "assistant",
-                    "content": (
-                        "👋 **¡Hola! Bienvenido/a a la Red SaludConecta.**\n\n"
-                        "Soy **SaludBot**, tu asistente clínico y administrativo de orientación asistencial y triaje preliminar. Te puedo orientar en:\n\n"
-                        "* 📋 **Preparación de Exámenes:** Indicaciones de ayuno, medicamentos y precauciones (LAB, TAC, Resonancia, Endoscopías).\n"
-                        "* 🩺 **Especialidades Médicas:** Prerrequisitos clínicos e interconsultas para más de 45 especialidades.\n"
-                        "* 🗓️ **Agendamiento y Citas (Mock HIS):** Consulta de disponibilidad horaria, reserva y anulación de horas médicas.\n"
-                        "* 💳 **Convenios y Coberturas:** Información institucional para Fonasa (MLE / Bono PAD) e Isapres (I-Med).\n\n"
-                        "> ⚠️ *Recuerda: Si presentas síntomas de urgencia con riesgo vital, no uses este chat y llama al **SAMU 131**.*\n\n"
-                        "¿En qué te puedo orientar hoy?"
-                    ),
-                    "is_emergency": False,
-                    "response_time_ms": 0.0,
-                    "tools_used": [],
-                    "pii_detected": [],
-                    "api_notice": None,
-                }
-            ]
-            st.rerun()
-        except Exception as e:
-            st.error(f"Error al reiniciar: {e}")
+    if st.button("🔄 Reiniciar Conversación", width="stretch", type="secondary"):
+        cambiar_paciente()
+        st.rerun()
 
     st.markdown("---")
 
@@ -233,7 +265,8 @@ for msg in st.session_state.messages:
         if msg.get("is_emergency", False):
             st.error(msg["content"])
         else:
-            st.markdown(msg["content"])
+            # Markdown une las líneas con "•": como lista, cada cupo o indicación queda en su línea
+            st.markdown(msg["content"].replace("\n• ", "\n- "))
 
         # Metadatos del mensaje (tiempo de respuesta, herramientas, PII)
         metadata_chips = []
@@ -243,11 +276,19 @@ for msg in st.session_state.messages:
             tools_str = ", ".join(f"`{t}`" for t in msg["tools_used"])
             metadata_chips.append(f"🛠️ **HIS Tools:** {tools_str}")
         if msg.get("pii_detected"):
-            pii_str = ", ".join(f"{e['type']}: {e['original']}" if isinstance(e, dict) else str(e) for e in msg["pii_detected"])
+            pii_str = ", ".join(sorted({e["type"] for e in msg["pii_detected"]}))
             metadata_chips.append(f"🔒 **PII Protegido:** {pii_str}")
 
         if metadata_chips:
             st.caption(" • ".join(metadata_chips))
+
+        if msg.get("traza"):
+            plan = msg.get("plan")
+            etiqueta = f"🧭 Traza de decisiones · plan v{plan['version']} ({plan['estado']})" if plan else "🧭 Traza de decisiones"
+            with st.expander(etiqueta, expanded=False):
+                for evento in msg["traza"]:
+                    paso = f" `{evento['paso']}`" if evento.get("paso") else ""
+                    st.markdown(f"**{evento['tipo']}**{paso}: {evento['motivo']}")
 
         if msg.get("api_notice"):
             with st.expander("🛠️ Telemetría y Diagnóstico Técnico", expanded=False):
@@ -279,8 +320,9 @@ if prompt_to_process:
     try:
         result = st.session_state.agent.process_message(prompt_to_process)
         response_text = result.get("response", "No se obtuvo respuesta del sistema.")
-        is_emergency = result.get("bypass_activated", False) or "CÓDIGO ROJO" in response_text or "SAMU" in response_text
-        response_time = (time.perf_counter() - start_time) * 1000
+        is_emergency = result.get("bypass_activated", False)
+        # En Código Rojo se informa el tiempo del guardrail, que es el que garantiza la respuesta inmediata
+        response_time = result["response_time_ms"] if is_emergency else (time.perf_counter() - start_time) * 1000
         tools_used = result.get("tools_used", [])
         pii_detected = result.get("pii_detected", [])
         api_notice = result.get("api_notice")
@@ -294,6 +336,8 @@ if prompt_to_process:
             "tools_used": tools_used,
             "pii_detected": pii_detected,
             "api_notice": api_notice,
+            "traza": result.get("traza", []),
+            "plan": result.get("plan"),
         })
 
     except Exception as e:

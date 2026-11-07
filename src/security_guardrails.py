@@ -46,12 +46,14 @@ class EmergencyBypassGuardrail:
             r"\b(infarto|preinfarto|ataque\s+al\s+coraz[oó]n|paro\s+card[ií]aco)\b",
             r"\bdolor(\s+[\w]+){0,3}\s+(de\s+pecho|tor[aá]cico|en\s+el\s+pecho).*(brazo\s+izquierdo|mand[ií]bula|cuello|espalda)\b",
             r"\b(pecho|t[oó]rax).*(\s+[\w]+){0,3}\s+(brazo\s+izquierdo|mand[ií]bula)\b",
+            r"\bduele(\s+[\w]+){0,2}\s+(el\s+)?(pecho|t[oó]rax)\b",
         ],
         "SOSPECHA_ACV_NEURO": [
             r"\b(asimetr[ií]a\s+facial|boca\s+torcida|cara\s+ca[ií]da|cara\s+chueca)\b",
             r"\b(no\s+puedo\s+hablar|dificultad\s+para\s+hablar|habla\s+traposa|balbuceo|lengua\s+trabada)\b",
             r"\b(par[aá]lisis|p[eé]rdida\s+de\s+fuerza|se\s+me\s+durmi[oó])(\s+[\w]+){0,2}\s+(medio\s+cuerpo|un\s+lado|brazo|pierna)\b",
             r"\b(derrame\s+cerebral|acv|ictus|isquemia\s+cerebral)\b",
+            r"\b(no\s+siento|se\s+me\s+adormeci[oó])(\s+[\w]+){0,2}\s+(medio\s+cuerpo|un\s+lado|brazo|pierna)\b",
         ],
         "COMPROMISO_RESPIRATORIO_SEVERO": [
             r"\b(no\s+puedo\s+respirar|me\s+ahogo|falta\s+el\s+aire|dificultad\s+severa\s+para\s+respirar|asfixia|me\s+estoy\s+ahogando)\b",
@@ -65,11 +67,14 @@ class EmergencyBypassGuardrail:
         "HEMORRAGIA_SEVERA_Y_TRAUMA": [
             r"\b(hemorragia\s+masiva|sangrado\s+incontrolable|sangre\s+a\s+chorros)\b",
             r"\b(trauma\s+grave|p[eé]rdida\s+de\s+conciencia\s+con\s+golpe|inconsciente|desmayo\s+sin\s+reacci[oó]n)\b",
-            r"\b(convulsi[oó]n\s+activa|convulsionando)\b",
+            r"\b(convulsi[oó]n\s+activa|convulsionando|convulsiona|convulsion[oó])\b",
+            r"\b(sangrado\s+(abundante|masivo|profuso)|me\s+desmay[eé])\b",
         ],
         "RIESGO_VITAL_PSIQUIATRICO": [
             r"\b(quiero\s+matarme|voy\s+a\s+suicidarme|intent[eé]\s+matarme|plan\s+de\s+suicidio)\b",
             r"\b(acabo\s+de\s+tomarme\s+(todas\s+las\s+pastillas|veneno)|intoxicaci[oó]n\s+voluntaria)\b",
+            r"\b(quiero\s+morir(me)?|me\s+quiero\s+(morir|matar)|no\s+quiero\s+seguir\s+viviendo)\b",
+            r"\bme\s+tom[eé]\s+todas\s+las\s+pastillas\b",
         ],
     }
 

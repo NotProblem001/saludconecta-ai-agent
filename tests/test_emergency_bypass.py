@@ -124,3 +124,46 @@ def test_pii_anonymizer_phone_and_email(anonymizer):
     assert "[EMAIL_PROTEGIDO]" in result.sanitized_text
     assert result.phone_count >= 1
     assert result.email_count == 1
+
+
+@pytest.mark.parametrize("frase_natural", [
+    "me duele mucho el pecho",
+    "me duele el pecho",
+    "no siento el brazo derecho",
+    "se me adormecio medio cuerpo",
+    "tengo sangrado abundante",
+    "me desmayé hace un rato",
+    "mi hijo convulsiona",
+    "quiero morir",
+    "me tomé todas las pastillas",
+])
+def test_frases_coloquiales_de_riesgo_vital(guardrail, frase_natural):
+    """Formas coloquiales que EP1 dejaba pasar deben activar el Código Rojo."""
+    assert guardrail.evaluate(frase_natural).is_emergency is True
+
+
+def test_pii_no_llega_al_llm_ni_a_la_memoria(monkeypatch, tmp_path):
+    """RNF-01: el LLM y la memoria conversacional solo reciben texto anonimizado."""
+    from langchain_core.messages import AIMessage
+    from src.agent_orchestrator import SaludConectaAgent
+    from src.tools_agenda import init_database
+
+    monkeypatch.setattr("src.tools_agenda.DB_PATH", tmp_path / "his.db")
+    init_database(db_file=tmp_path / "his.db", force_reset=True)
+    agent = SaludConectaAgent(use_mock_embeddings=True)
+
+    capturado = []
+
+    class LLMFalso:
+        def invoke(self, messages):
+            capturado.extend(messages)
+            return AIMessage(content="Respuesta de prueba")
+
+    agent.llm, agent.has_credentials = LLMFalso(), True
+    agent.process_message("Hola, soy 15.678.901-2 y mi fono es +56988776655, ¿atienden Fonasa?")
+
+    enviado = " ".join(str(m.content) for m in capturado)
+    memoria = " ".join(str(m.content) for m in agent.memory.chat_memory.messages)
+    for pii in ("15.678.901-2", "+56988776655"):
+        assert pii not in enviado
+        assert pii not in memoria
