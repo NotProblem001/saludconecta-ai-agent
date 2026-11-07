@@ -189,6 +189,75 @@ def test_llm_que_salta_la_validacion_no_evita_la_advertencia(entorno):
     assert entorno.estado_cita(26) == "DISPONIBLE"
 
 
+def test_argumentos_del_llm_no_pisan_la_replanificacion(entorno):
+    """Caso real: el LLM fijaba comuna=Maipú y la sede relajada volvía a filtrarse."""
+    llm = LLMFalso(plan_json(
+        "agendar", "clasificar_solicitud", "consultar_disponibilidad_horas", "elegir_cupo", "solicitar_datos",
+        "validar_reglas", "reservar_cita_medica",
+        consultar_disponibilidad_horas={"especialidad": "Cardiología", "comuna": "Maipú"},
+    ))
+    r = entorno.crear_agente(llm=llm).process_message("Necesito una hora de cardiología en Maipú")
+
+    assert "Santiago Centro" in r["response"]
+    assert r["plan"]["estado"] == "esperando_paciente"
+
+
+def test_llm_no_puede_cancelar_si_el_paciente_no_lo_pidio(entorno):
+    """Caso real: sin plan activo, el LLM interpretó 'la cita 1' como cancelar."""
+    entorno.crear_agente("PAC-002").process_message("Quiero reservar la cita 1")
+
+    llm = LLMFalso(plan_json("cancelar", "solicitar_datos", "cancelar_cita_medica"), "Respuesta general")
+    r = entorno.crear_agente("PAC-002", llm=llm).process_message("la cita 1")
+
+    assert entorno.estado_cita(1) == "RESERVADA"
+    assert "cancelar_cita_medica" not in r["tools_used"]
+    assert eventos(r, "PLAN_LLM_DESCARTADO")
+
+
+def test_llm_no_puede_reservar_si_el_paciente_no_lo_pidio(entorno):
+    llm = LLMFalso(plan_json("agendar", "solicitar_datos", "validar_reglas", "reservar_cita_medica"), "Respuesta general")
+    entorno.crear_agente("PAC-002", llm=llm).process_message("la cita 1")
+
+    assert entorno.estado_cita(1) == "DISPONIBLE"
+
+
+def test_llm_no_convierte_un_agendamiento_en_consulta(entorno):
+    """Caso real: 'Necesito un TAC' terminaba en una respuesta informativa sin cupos."""
+    llm = LLMFalso(plan_json("preparacion", "clasificar_solicitud", "buscar_protocolo_rag"))
+    r = entorno.crear_agente("PAC-001", llm=llm).process_message("Necesito un TAC de abdomen con contraste")
+
+    assert r["plan"]["intencion"] == "agendar"
+    assert "Cupos disponibles" in r["response"]
+
+
+def test_llm_puede_iniciar_busqueda_si_las_reglas_no_reconocen_la_solicitud(entorno):
+    llm = LLMFalso(plan_json(
+        "agendar", "consultar_disponibilidad_horas", "elegir_cupo", "solicitar_datos", "validar_reglas",
+        "reservar_cita_medica",
+    ))
+    r = entorno.crear_agente(llm=llm).process_message("Me gustaría que me viera un doctor pronto")
+
+    assert r["plan"]["origen"] == "llm"
+    assert "Cupos disponibles" in r["response"]
+
+
+def test_planificador_recibe_la_conversacion_reciente(entorno):
+    llm = LLMFalso(plan_json("general", "responder_directo"), "Primera respuesta")
+    agente = entorno.crear_agente(llm=llm)
+    agente.process_message("¿Dónde tienen cobertura?")
+
+    agente.process_message("¿Y los fines de semana?")
+
+    assert "[CONVERSACION_RECIENTE]" in llm.recibido[-2]
+    assert "Dónde tienen cobertura" in llm.recibido[-2]
+
+
+def test_respuesta_del_llm_sin_comillas_envolventes(entorno):
+    llm = LLMFalso(plan_json("general", "responder_directo"), '"Hola, ¿en qué le ayudo?"')
+    r = entorno.crear_agente(llm=llm).process_message("Hola")
+    assert r["response"] == "Hola, ¿en qué le ayudo?"
+
+
 def test_llm_caido_no_interrumpe_al_paciente(entorno):
     class LLMCaido:
         def invoke(self, _):

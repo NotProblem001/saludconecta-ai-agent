@@ -78,7 +78,7 @@ def clasificar_texto(texto: str) -> SalidaClasificacion:
         (nombre for nombre, patron in ESPECIALIDADES if re.search(rf"\b(?:{patron})\b", t)), None
     )
 
-    verbo_reserva = bool(re.search(r"\b(agendar|agenda|reservar|reserva|sacar|pedir|tomar|confirmar|confirmo)\b", t))
+    verbo_reserva = bool(re.search(r"\b(agendar|agenda|reservar|reserva|sacar|pedir|confirmar|confirmo)\b", t))
     pide_algo = bool(re.search(r"\b(necesito|quiero|busco)\b", t))
     objeto = bool(re.search(_OBJETO_AGENDA, t)) or bool(re.search(r"\bid\b|#\d", t))
 
@@ -88,7 +88,7 @@ def clasificar_texto(texto: str) -> SalidaClasificacion:
         intencion = "reprogramar"
     elif re.search(r"\b(mis citas|mi cita|mis horas|mi historial|que citas tengo|citas tengo)\b", t):
         intencion = "historial"
-    elif verbo_reserva and (objeto or examen):
+    elif (verbo_reserva and (objeto or examen)) or (re.search(r"\btomar\b", t) and objeto):
         intencion = "agendar"
     elif re.search(_PREPARACION_EXPLICITA, t):
         intencion = "preparacion"

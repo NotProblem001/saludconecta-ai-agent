@@ -377,7 +377,8 @@ class SaludConectaAgent:
         messages.append(HumanMessage(content=format_user_prompt(sanitized_input)))
 
         try:
-            return self.llm.invoke(messages).content or None, None
+            # Los few-shots citan la respuesta entre comillas y el modelo a veces las imita
+            return self.llm.invoke(messages).content.strip().strip('"') or None, None
         except Exception as e:
             aviso = format_api_error(e)
             logger.warning("Fallo durante invocación de ChatOpenAI: %s", aviso)

@@ -315,6 +315,27 @@ def test_pide_solo_los_datos_que_faltan(entorno):
     assert "Juan Pérez" in final["response"]
 
 
+def test_nombre_declarado_no_llega_al_llm_ni_a_la_memoria(entorno):
+    """Caso real: el anonimizador no cubre nombres y la reserva los devolvía al historial."""
+    llm = LLMFalso(PLAN_AGENDAR)
+    agente = entorno.crear_agente(llm=llm)
+    agente.process_message("Quiero hora de cardiología, soy Pedro Rojas, RUT 13.579.246-8, fono +56955554444")
+    agente.process_message("la cita 1")
+    agente.process_message("Gracias, ¿atienden los sábados?")
+
+    expuesto = " ".join(llm.recibido) + " ".join(str(m.content) for m in agente.memory.chat_memory.messages)
+    assert "Pedro Rojas" not in expuesto
+
+
+def test_nombre_de_la_ficha_no_vuelve_al_llm_en_el_historial(entorno):
+    llm = LLMFalso()
+    agente = entorno.crear_agente("PAC-002", llm=llm)
+    agente.process_message("Quiero reservar la cita 1")
+    agente.process_message("Gracias, ¿atienden los sábados?")
+
+    assert "María González Rojas" not in " ".join(llm.recibido)
+
+
 def test_script_de_demo_aprueba_todos_los_escenarios():
     raiz = Path(__file__).resolve().parent.parent
     proceso = subprocess.run(

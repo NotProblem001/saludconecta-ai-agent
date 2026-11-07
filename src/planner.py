@@ -292,6 +292,19 @@ def plan_por_llm(llm: Any, sanitizado: str, contexto_paciente: str) -> Plan:
     )
 
 
+def _concuerda_con_reglas(plan: Plan, clasificacion: SalidaClasificacion, datos: Dict[str, Any]) -> bool:
+    """
+    El LLM no puede iniciar por sí solo una escritura que el paciente no pidió.
+    Si las reglas reconocen la intención, manda esa. Si no la reconocen, el LLM puede aportar
+    una lectura o una búsqueda de cupos, pero nunca cancelar, reprogramar ni reservar un cupo directo.
+    """
+    if clasificacion.intencion != "general":
+        return plan.intencion == clasificacion.intencion
+    if plan.intencion == "agendar":
+        return not datos.get("cita_id")
+    return plan.intencion not in ("cancelar", "reprogramar")
+
+
 def crear_plan(
     llm: Any, sanitizado: str, contexto_paciente: str, datos: Dict[str, Any], paciente_id: Optional[str]
 ) -> Tuple[Plan, Optional[str]]:
@@ -300,8 +313,10 @@ def crear_plan(
     aviso = None
     if llm is not None:
         try:
-            plan = plan_por_llm(llm, sanitizado, contexto_paciente)
-            return asegurar_invariantes(plan, clasificacion, paciente_id, datos), None
+            plan = asegurar_invariantes(plan_por_llm(llm, sanitizado, contexto_paciente), clasificacion, paciente_id, datos)
+            if not _concuerda_con_reglas(plan, clasificacion, datos):
+                raise PlanInvalido(f"Intención {plan.intencion} sin respaldo en el mensaje")
+            return plan, None
         except Exception as e:
             aviso = f"Plan LLM descartado ({type(e).__name__}); se usa plan por reglas"
             logger.warning(aviso)

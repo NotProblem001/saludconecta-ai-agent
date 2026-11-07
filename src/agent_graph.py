@@ -150,7 +150,7 @@ class GrafoAgente:
         if self.a.paciente_id and extraido.get("farmacos_declarados"):
             for farmaco in extraido["farmacos"]:
                 self._memoria_segura(self.a.memoria.agregar_farmaco, self.a.paciente_id, farmaco)
-        return {"extraido": extraido, "recordatorio": recordatorio}
+        return {"extraido": extraido, "recordatorio": recordatorio, "sanitizado": self._sin_nombre(s["sanitizado"])}
 
     def _planificar(self, s: EstadoTurno) -> EstadoTurno:
         tarea, traza = self.a.tarea, self.a.traza
@@ -175,8 +175,7 @@ class GrafoAgente:
             self.a.ultimo_plan = tarea.plan
             tarea.cerrar(conservar=DATOS_PACIENTE + ("cita_id", "comuna", "franja"))
 
-        contexto = self.a.contexto.como_prompt() if self.a.contexto else ""
-        plan, aviso = crear_plan(self.a.llm, s["sanitizado"], contexto, tarea.datos, self.a.paciente_id)
+        plan, aviso = crear_plan(self.a.llm, s["sanitizado"], self._contexto_planificador(), tarea.datos, self.a.paciente_id)
         if aviso:
             traza.registrar("PLAN_LLM_DESCARTADO", aviso)
         tarea.plan = plan
@@ -187,6 +186,20 @@ class GrafoAgente:
             pasos=plan.resumen(), busqueda=tarea.datos.get("busqueda"),
         )
         return {"siguiente": "ejecutar_paso"}
+
+    def _sin_nombre(self, texto: str) -> str:
+        """El anonimizador no reconoce nombres: se enmascara el nombre conocido de la tarea."""
+        nombre = self.a.tarea.datos.get("nombre")
+        return texto.replace(nombre, "[NOMBRE_PROTEGIDO]") if nombre else texto
+
+    def _contexto_planificador(self) -> str:
+        """Memoria del paciente y últimos turnos anonimizados, ambos delimitados como dato."""
+        partes = [self.a.contexto.como_prompt()] if self.a.contexto else []
+        recientes = self.a.memory.chat_memory.messages[-4:]
+        if recientes:
+            lineas = [f"{m.type}: {str(m.content)[:200]}" for m in recientes]
+            partes.append("[CONVERSACION_RECIENTE]\n" + "\n".join(lineas) + "\n[/CONVERSACION_RECIENTE]")
+        return "\n".join(partes)
 
     def _preparar_busqueda(self, s: EstadoTurno) -> None:
         """Fija los filtros de agenda; la preferencia guardada solo aplica si el paciente no indicó otra."""
@@ -242,7 +255,8 @@ class GrafoAgente:
             traza.registrar("PASO_INTERNO", paso.descripcion, paso=paso.herramienta, estado=paso.estado)
             return {"ultimo_paso": paso.herramienta, "salida_fallida": None}
 
-        args = {**paso.args, **self._resolver_args(paso.herramienta, s)}
+        # Los argumentos salen del estado de la tarea: los del plan no deben pisar una búsqueda ya relajada
+        args = self._resolver_args(paso.herramienta, s)
         salida = REGISTRO[paso.herramienta].invoke(args)
         tarea.resultados[paso.herramienta] = salida
         if salida.ok:
@@ -507,8 +521,8 @@ class GrafoAgente:
 
     def _persistir(self, s: EstadoTurno) -> EstadoTurno:
         a = self.a
-        a.memory.chat_memory.add_user_message(s["sanitizado"])
-        a.memory.chat_memory.add_ai_message(a.pii_anonymizer.anonymize(s["respuesta"]).sanitized_text)
+        a.memory.chat_memory.add_user_message(self._sin_nombre(s["sanitizado"]))
+        a.memory.chat_memory.add_ai_message(self._sin_nombre(a.pii_anonymizer.anonymize(s["respuesta"]).sanitized_text))
 
         tarea = a.tarea
         if tarea.plan is not None:

@@ -143,6 +143,8 @@ def test_comprobante_sin_pii_y_guardado_en_memoria():
     ("Quiero reprogramar mi hora", "reprogramar", None, None),
     ("¿Qué citas tengo?", "historial", None, None),
     ("¿Dónde tienen cobertura?", "general", None, None),
+    ("Tomo metformina. ¿Cuánto debo tomar el día del TAC?", "preparacion", "Imagenología - TAC con Contraste", "IMG-102"),
+    ("Quiero tomar una hora de cardiología", "agendar", "Cardiología Adulto", None),
     ("Me duele la espalda hace meses, necesito una hora", "agendar", "Traumatología - Columna", None),
 ])
 def test_clasificacion(texto, intencion, especialidad, protocolo):
