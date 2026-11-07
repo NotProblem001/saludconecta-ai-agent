@@ -49,6 +49,8 @@ def hubo(resultados: List[Dict], tipo: str) -> bool:
     return any(e["tipo"] == tipo for r in resultados for e in r["traza"])
 
 
+ORIGENES: List[str] = []
+
 ESCENARIOS = [
     Escenario(
         "1. Sin cupos en la sede preferida", "PAC-002",
@@ -110,6 +112,7 @@ def ejecutar(escenario: Escenario, ruta_bd: Path, directorio: Path) -> bool:
         print(f"\n👤 {turno}\n\n🤖 {resultado['response']}\n\n🧭 Traza:\n{formatear_traza(resultado['traza'])}")
 
     tools_agenda.DB_PATH = ruta_bd
+    ORIGENES.extend(r["plan"]["origen"] for r in resultados if r["plan"])
     return escenario.verificar(resultados)
 
 
@@ -133,6 +136,10 @@ def main() -> int:
     print("\n" + "=" * 90 + "\nRESUMEN\n" + "=" * 90)
     for escenario, aprobado in resumen:
         print(f"{'OK   ' if aprobado else 'FALLA'} {escenario.nombre}")
+    print(f"
+Planes generados por LLM: {ORIGENES.count('llm')} | por reglas: {ORIGENES.count('reglas')}")
+    if args.llm == "real" and "llm" not in ORIGENES:
+        print("AVISO: ningún plan provino del LLM. Revise la credencial en .env; esta pasada no valida el LLM real.")
     return 0 if all(aprobado for _, aprobado in resumen) else 1
 
 
