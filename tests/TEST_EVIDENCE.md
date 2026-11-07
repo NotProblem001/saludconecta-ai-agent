@@ -71,7 +71,7 @@ Modelo `openai/gpt-4o-mini` por OpenRouter, sobre BD temporal.
 
 | Prueba | Antes de corregir | Después de corregir |
 |---|---|---|
-| `run_demo_scenarios.py --llm real` | 3 de 6, 10 planes del LLM | 6 de 6 en 4 pasadas, 10 planes del LLM en cada una, 0 descartados |
+| `run_demo_scenarios.py --llm real` | 3 de 6, 10 planes del LLM | 6 de 6 en 5 pasadas (la última con el código final), 10 planes del LLM en cada una, 0 descartados |
 | Guion completo (`docs/guion_demo.md`) | No aplicable | Correcto |
 | Chequeos adversos y de PII (16) | No aplicable | 16 de 16 |
 | Nombre del paciente enviado al proveedor | Se enviaba | No se envía |
