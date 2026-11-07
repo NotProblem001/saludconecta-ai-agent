@@ -22,6 +22,12 @@ def normalizar_rut(rut: Optional[str]) -> str:
 class MemoriaLargoPlazo:
     """Interfaz de lectura y escritura de la memoria persistente de cada paciente."""
 
+    def listar_pacientes(self) -> List[Dict[str, Any]]:
+        conn = get_db_connection()
+        filas = conn.execute("SELECT paciente_id, nombre FROM pacientes ORDER BY paciente_id").fetchall()
+        conn.close()
+        return [dict(f) for f in filas]
+
     def obtener_paciente(self, paciente_id: str) -> Optional[Dict[str, Any]]:
         conn = get_db_connection()
         fila = conn.execute("SELECT * FROM pacientes WHERE paciente_id = ?", (paciente_id,)).fetchone()

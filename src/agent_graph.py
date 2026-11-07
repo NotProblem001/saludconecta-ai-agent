@@ -516,7 +516,7 @@ class GrafoAgente:
             if tarea.plan.estado in ("completado", "abortado", "abstencion", "degradado"):
                 tarea.cerrar(conservar=DATOS_PACIENTE)
             if a.paciente_id:
-                a.cargar_memoria_paciente()
+                a.contexto = self._memoria_segura(cargar_contexto, a.paciente_id, a.memoria) or a.contexto
         a.traza.persistir()
         return {}
 
