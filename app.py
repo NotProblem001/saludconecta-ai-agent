@@ -321,7 +321,8 @@ if prompt_to_process:
         result = st.session_state.agent.process_message(prompt_to_process)
         response_text = result.get("response", "No se obtuvo respuesta del sistema.")
         is_emergency = result.get("bypass_activated", False)
-        response_time = (time.perf_counter() - start_time) * 1000
+        # En Código Rojo se informa el tiempo del guardrail, que es el que garantiza la respuesta inmediata
+        response_time = result["response_time_ms"] if is_emergency else (time.perf_counter() - start_time) * 1000
         tools_used = result.get("tools_used", [])
         pii_detected = result.get("pii_detected", [])
         api_notice = result.get("api_notice")
